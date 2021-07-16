@@ -9,6 +9,10 @@ class Shopper {
   String _senha;
   double _balance = 0;
   bool _deliveryman;
+  double _latitude;
+  double _longitude;
+  double _rate;
+  String _phone;
 
 
   Shopper();
@@ -23,7 +27,11 @@ class Shopper {
       "fotoCRLV" : this.fotoCRLV,
       "fotoCNH" : this.fotoCNH,
       "balance": this.balance,
-      "deliveryman": false,
+      "deliveryman": this.deliveryman,
+      "latitude": this.latitude,
+      "longitude": this.longitude,
+      "rate": this.rate,
+      "phone": this.phone
     };
 
     return map;
@@ -82,5 +90,29 @@ class Shopper {
 
   set idUser(String value) {
     _idUser = value;
+  }
+
+  double get longitude => _longitude;
+
+  set longitude(double value) {
+    _longitude = value;
+  }
+
+  double get latitude => _latitude;
+
+  set latitude(double value) {
+    _latitude = value;
+  }
+
+  double get rate => _rate;
+
+  set rate(double value) {
+    _rate = value;
+  }
+
+  String get phone => _phone;
+
+  set phone(String value) {
+    _phone = value;
   }
 }

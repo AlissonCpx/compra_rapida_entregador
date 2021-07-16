@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:compra_rapida_entregador/model/destino.dart';
+import 'package:compra_rapida_entregador/model/market.dart';
 import 'package:compra_rapida_entregador/model/order.dart';
 import 'package:compra_rapida_entregador/model/shopper.dart';
 import 'package:compra_rapida_entregador/model/user.dart';
@@ -46,8 +48,34 @@ class Util {
       shopper.foto = documentList[0]["foto"];
       shopper.fotoCNH = documentList[0]["fotoCNH"];
       shopper.fotoCRLV = documentList[0]["fotoCRLV"];
+      shopper.latitude = documentList[0]["latitude"];
+      shopper.longitude = documentList[0]["longitude"];
+      shopper.rate = documentList[0]["rate"];
+      shopper.phone = documentList[0]["phone"];
     }
     return shopper;
+  }
+
+  static Future<Market> getMercados(String nome) async {
+
+    Market mercado = new Market();
+    List<DocumentSnapshot> documentList;
+    documentList = (await Firestore.instance
+        .collection("mercados")
+        .where("nome", isEqualTo: nome)
+        .getDocuments())
+        .documents;
+    if (documentList != null) {
+      mercado.nome = documentList[0]["nome"];
+      mercado.rua = documentList[0]["rua"];
+      mercado.bairro = documentList[0]["bairro"];
+      mercado.cep = documentList[0]["cep"];
+      mercado.cidade = documentList[0]["cidade"];
+      mercado.numero = documentList[0]["numero"];
+      mercado.latitude = documentList[0]["latitude"];
+      mercado.longitude = documentList[0]["longitude"];
+    }
+    return mercado;
   }
 
   static Future<OrderPed> pesquisaOrder(String idOrder) async {
@@ -59,38 +87,47 @@ class Util {
         .getDocuments())
         .documents;
     if (documentList != null) {
-      ped.idPedido = documentList[0].documentID;
+      ped.idPedido = documentList[0]["idPedido"];
       ped.situacao = documentList[0]["situacao"];
       User user = await Util.pesquisaUser(documentList[0]["userClId"]["id"]);
       ped.userClId = user;
       Shopper shop = await Util.pesquisaShopper(documentList[0]["entregadorClId"]["id"]);
       ped.entregadorClId = shop;
       ped.itens = documentList[0]["itens"];
+      Market merc = await Util.getMercados(documentList[0]["nome"]);
+      ped.mercado = merc;
       ped.dataEntregaPed = documentList[0]["dataEntregaPed"];
-      ped.latitudeDest = documentList[0]["latitudeDest"];
-      ped.longitudeDest = documentList[0]["longitudeDest"];
-      ped.longitudeMarketDest = documentList[0]["longitudeMarketDest"];
-      ped.latitudeMarketDest = documentList[0]["latitudeMarketDest"];
-      ped.numMarketDest = documentList[0]["numMarketDest"];
-      ped.dataEntregaPed = documentList[0]["dataEntregaPed"];
-      ped.nomeMarket = documentList[0]["nomeMarket"];
-      ped.ruaDest = documentList[0]["ruaDest"];
+      ped.dataHoraPed = documentList[0]["dataHoraPed"];
+      ped.valorNota = documentList[0]["valorNota"];
+      ped.valorFrete = documentList[0]["valorFrete"];
+      ped.nota = documentList[0]["nota"];
+      Destino dest = new Destino();
+      dest.latitude = documentList[0].data["destino"]["latitude"];
+      dest.longitude = documentList[0].data["destino"]["longitude"];
+      dest.cidade = documentList[0].data["destino"]["cidade"];
+      dest.cep = documentList[0].data["destino"]["cep"];
+      dest.bairro = documentList[0].data["destino"]["bairro"];
+      dest.numero = documentList[0].data["destino"]["numero"];
+      dest.rua = documentList[0].data["destino"]["rua"];
+
+      ped.destino = dest;
+
     }
     return ped;
   }
 
-  static atualizarDadosLocalizacao(String idRequisicao, double lat, double lon, String tipo, String userId) async {
+  static atualizarDadosLocalizacao(String idPedido, double lat, double lon, String shopperId) async {
 
     Firestore db = Firestore.instance;
 
-    User user = await pesquisaUser(userId);
-    //user.latitude = lat;
-    //user.longitude = lon;
+    Shopper shop = await pesquisaShopper(shopperId);
+    shop.latitude = lat;
+    shop.longitude = lon;
 
     db.collection("pedidos")
-        .document( idRequisicao )
+        .document( idPedido )
         .updateData({
-      "${tipo}" : user.toMap()
+      "entregadorClId" : shop.toMap()
     });
 
   }

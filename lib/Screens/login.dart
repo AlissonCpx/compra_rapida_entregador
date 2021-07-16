@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:compra_rapida_entregador/Screens/cadastro.dart';
 import 'package:compra_rapida_entregador/Screens/home.dart';
+import 'package:compra_rapida_entregador/Screens/trocarsenha.dart';
 import 'package:compra_rapida_entregador/model/shopper.dart';
+import 'package:compra_rapida_entregador/util/util.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
@@ -42,21 +44,11 @@ class _LoginState extends State<Login> {
       Shopper shopper = new Shopper();
 
 
-      List<DocumentSnapshot> documentList;
-      documentList = (await Firestore.instance
-              .collection("shoppers")
-              .where("id", isEqualTo: firebaseUser.user.uid)
-              .getDocuments())
-          .documents;
+      shopper = await Util.pesquisaShopper(firebaseUser.user.uid);
 
-      shopper.idUser = documentList[0].data["id"];
-      shopper.foto = documentList[0].data["foto"];
-      shopper.email = documentList[0].data["email"];
-      shopper.nome = documentList[0].data["nome"];
-      shopper.deliveryman = documentList[0].data["deliveryman"];
 
       if (shopper.deliveryman) {
-         Navigator.push(
+         Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => Home(shopper),
@@ -144,7 +136,9 @@ class _LoginState extends State<Login> {
                           width: 255,
                         ),
                         FlatButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => TrocaSenha(),));
+                          },
                           child: Text('Esqueceu a senha?'),
                         ),
                       ],

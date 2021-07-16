@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:date_format/date_format.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 
 class Cadastro extends StatefulWidget {
   @override
@@ -21,7 +22,10 @@ class _CadastroState extends State<Cadastro> {
   final senhaController = TextEditingController();
   final confirmController = TextEditingController();
   final dtNascController = TextEditingController();
+  final phoneController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
+
+  var maskFormatter = new MaskTextInputFormatter(mask: '(##) #####-####', filter: { "#": RegExp(r'[0-9]') });
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -135,6 +139,9 @@ class _CadastroState extends State<Cadastro> {
         shopper.fotoCNH = urlCnh;
         shopper.fotoCRLV = urlCrlv;
         shopper.balance = 0;
+        shopper.rate = 0;
+        shopper.phone = maskFormatter.getUnmaskedText();
+        shopper.deliveryman = false;
 
         auth
             .createUserWithEmailAndPassword(
@@ -157,22 +164,6 @@ class _CadastroState extends State<Cadastro> {
           //onFail();
         });
       }
-
-      auth
-          .createUserWithEmailAndPassword(
-              email: shopper.email, password: shopper.senha)
-          .then((firebaseUser) {
-        //Salvar dados do usuário
-        Firestore db = Firestore.instance;
-        shopper.idUser = firebaseUser.user.uid;
-        db
-            .collection("usuarios")
-            .document(firebaseUser.user.uid)
-            .setData(shopper.toMap());
-        onSuccess();
-      }).catchError((e) {
-        //onFail();
-      });
 
       setState(() {
         loading = false;
@@ -290,6 +281,7 @@ class _CadastroState extends State<Cadastro> {
                         autofocus: false,
                         controller: nomeController,
                         decoration: InputDecoration(
+                          prefixIcon: Icon(Icons.person),
                             hintText: 'Nome Completo',
                             labelStyle: TextStyle(color: Colors.redAccent)),
                         textAlign: TextAlign.center,
@@ -306,7 +298,9 @@ class _CadastroState extends State<Cadastro> {
                       child: TextFormField(
                         autofocus: false,
                         controller: emailController,
+                        keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
+                          prefixIcon: Icon(Icons.email),
                             hintText: 'Email',
                             labelStyle: TextStyle(color: Colors.redAccent)),
                         textAlign: TextAlign.center,
@@ -321,10 +315,31 @@ class _CadastroState extends State<Cadastro> {
                     Padding(
                       padding: EdgeInsets.all(10.0),
                       child: TextFormField(
+                        autofocus: false,
+                        inputFormatters: [maskFormatter],
+                        controller: phoneController,
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.phone),
+                            hintText: 'Telefone',
+                            labelStyle: TextStyle(color: Colors.redAccent)),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 18.0),
+                        validator: (value) {
+                          if (value.isEmpty) {
+                            return "Digite o seu telefone";
+                          }
+                        },
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.all(10.0),
+                      child: TextFormField(
                         obscureText: true,
                         autofocus: false,
                         controller: senhaController,
                         decoration: InputDecoration(
+                          prefixIcon: Icon(Icons.password),
                             hintText: 'Senha',
                             labelStyle: TextStyle(color: Colors.redAccent)),
                         textAlign: TextAlign.center,
@@ -345,6 +360,7 @@ class _CadastroState extends State<Cadastro> {
                         autofocus: false,
                         controller: confirmController,
                         decoration: InputDecoration(
+                          prefixIcon: Icon(Icons.password_sharp),
                             hintText: 'Confirmar Senha',
                             labelStyle: TextStyle(color: Colors.redAccent)),
                         textAlign: TextAlign.center,
@@ -372,6 +388,7 @@ class _CadastroState extends State<Cadastro> {
                             autofocus: false,
                             controller: dtNascController,
                             decoration: InputDecoration(
+                              prefixIcon: Icon(Icons.calendar_today),
                                 hintText: 'Data Nascimento',
                                 labelStyle: TextStyle(color: Colors.redAccent)),
                             textAlign: TextAlign.center,

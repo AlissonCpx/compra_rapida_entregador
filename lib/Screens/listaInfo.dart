@@ -2,10 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:compra_rapida_entregador/Screens/corrida.dart';
 import 'package:compra_rapida_entregador/model/order.dart';
 import 'package:compra_rapida_entregador/model/shopper.dart';
+import 'package:compra_rapida_entregador/model/status.dart';
 import 'package:compra_rapida_entregador/model/user.dart';
 import 'package:compra_rapida_entregador/util/util.dart';
 import 'package:date_format/date_format.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 class listaInfo extends StatefulWidget {
   @override
@@ -45,15 +47,15 @@ class _listaInfoState extends State<listaInfo> {
     db.collection("pedidos")
         .document( widget.order.idPedido )
         .updateData({
-      "entregadorClId" : shopper.toMap()
+      "entregadorClId" : shopper.toMap(),
+      "situacao": Status.AGUARDANDO
     });
 
     Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => Corrida(widget.order.idPedido),
+          builder: (context) => Corrida(widget.order.idPedido, shopper.idUser),
         ));
-    
 
   }
 
@@ -110,12 +112,12 @@ class _listaInfoState extends State<listaInfo> {
               Divider(),
               ListTile(
                 leading: Icon(Icons.shopping_cart),
-                title: Text("Super Mercado: ${widget.order.nomeMarket}"),
+                title: Text("Super Mercado: ${widget.order.mercado.nome}"),
               ),
               ListTile(
                 leading: Icon(Icons.location_on),
                 title: Text(
-                    "Endereço: ${widget.order.ruaDest}, ${widget.order.numDest}"),
+                    "Endereço: ${widget.order.destino.rua}, ${widget.order.destino.numero}"),
               ),
               ListTile(
                 leading: Icon(Icons.calendar_today),
@@ -134,7 +136,7 @@ class _listaInfoState extends State<listaInfo> {
               ),
               ListTile(
                 leading: Icon(Icons.monetization_on),
-                title: Text("Valor Entrega: ${30.00}"),
+                title: Text("Valor Entrega: ${widget.order.valorFrete.toStringAsFixed(2)}"),
               ),
               SizedBox(
                 height: 30,

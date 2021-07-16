@@ -1,10 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:compra_rapida_entregador/Screens/historico.dart';
+import 'package:compra_rapida_entregador/Screens/login.dart';
+import 'package:compra_rapida_entregador/Screens/pagamento.dart';
+import 'package:compra_rapida_entregador/Screens/perfil.dart';
+import 'package:compra_rapida_entregador/model/destino.dart';
+import 'package:compra_rapida_entregador/model/market.dart';
 import 'package:compra_rapida_entregador/model/order.dart';
 import 'package:compra_rapida_entregador/model/shopper.dart';
+import 'package:compra_rapida_entregador/model/status.dart';
 import 'package:compra_rapida_entregador/model/user.dart';
 import 'package:compra_rapida_entregador/util/util.dart';
 
 import 'package:date_format/date_format.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
@@ -69,7 +77,7 @@ class _HomeState extends State<Home> {
     List<DocumentSnapshot> documentList;
     documentList = (await db
             .collection("pedidos")
-            .where("entregadorClId", isEqualTo: null)
+            .where("situacao", isEqualTo: Status.AGUARDANDO)
             .getDocuments())
         .documents;
 
@@ -80,16 +88,25 @@ class _HomeState extends State<Home> {
         ped.situacao = documentList[i]["situacao"];
         User user = await Util.pesquisaUser(documentList[i]["userClId"]["id"]);
         ped.userClId = user;
+        //Shopper shop = await Util.pesquisaShopper(documentList[i]["entregadorClId"]["id"]);
+        //ped.entregadorClId = shop;
         ped.itens = documentList[i]["itens"];
+        Market merc = await Util.getMercados(documentList[i]["nome"]);
+        ped.mercado = merc;
         ped.dataEntregaPed = documentList[i]["dataEntregaPed"];
-        ped.latitudeDest = documentList[i]["latitudeDest"];
-        ped.longitudeDest = documentList[i]["longitudeDest"];
-        ped.longitudeMarketDest = documentList[i]["longitudeMarketDest"];
-        ped.latitudeMarketDest = documentList[i]["latitudeMarketDest"];
-        ped.numMarketDest = documentList[i]["numMarketDest"];
-        ped.dataEntregaPed = documentList[i]["dataEntregaPed"];
-        ped.nomeMarket = documentList[i]["nomeMarket"];
-        ped.ruaDest = documentList[i]["ruaDest"];
+        ped.dataHoraPed = documentList[i]["dataHoraPed"];
+        ped.valorFrete = documentList[i]["valorFrete"];
+
+        Destino dest = new Destino();
+        dest.latitude = documentList[i].data["destino"]["latitude"];
+        dest.longitude = documentList[i].data["destino"]["longitude"];
+        dest.cidade = documentList[i].data["destino"]["cidade"];
+        dest.cep = documentList[i].data["destino"]["cep"];
+        dest.bairro = documentList[i].data["destino"]["bairro"];
+        dest.numero = documentList[i].data["destino"]["numero"];
+        dest.rua = documentList[i].data["destino"]["rua"];
+
+        ped.destino = dest;
         setState(() {
           possuiLista = true;
           pedidos.add(ped);
@@ -135,7 +152,11 @@ class _HomeState extends State<Home> {
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   FlatButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        FirebaseAuth auth = FirebaseAuth.instance;
+                        auth.signOut();
+                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Login(),));
+                      },
                       child: PhysicalModel(
                         color: Colors.transparent,
                         child: Text(
@@ -153,15 +174,17 @@ class _HomeState extends State<Home> {
             ListTile(
               contentPadding: EdgeInsets.all(10.0),
               leading: Icon(
-                Icons.chat,
+                Icons.person,
                 color: Colors.black,
                 size: 40,
               ),
               title: Text(
-                "Mensagens",
+                "Perfil",
                 style: TextStyle(color: Colors.black),
               ),
-              onTap: () {},
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => Perfil(widget.shopper),));
+              },
               selected: true,
             ),
             ListTile(
@@ -175,7 +198,9 @@ class _HomeState extends State<Home> {
                 "Pagamento",
                 style: TextStyle(color: Colors.black),
               ),
-              onTap: () {},
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => Pagamento(widget.shopper.idUser),));
+              },
               selected: true,
             ),
             ListTile(
@@ -186,10 +211,12 @@ class _HomeState extends State<Home> {
                 size: 40,
               ),
               title: Text(
-                "Minhas Listas",
+                "Histórico",
                 style: TextStyle(color: Colors.black),
               ),
-              onTap: () {},
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => Historico(widget.shopper.idUser),));
+              },
               selected: true,
             ),
             ListTile(
@@ -242,60 +269,62 @@ class _HomeState extends State<Home> {
                             color: Colors.transparent,
                             elevation: 10,
                           ),
-                          possuiLista
-                              ? Expanded(
-                                  child: loadingListas
-                                      ? LinearProgressIndicator()
-                                      : ListView.builder(
-                                          itemCount: pedidos.length,
-                                          itemBuilder: (context, i) {
-                                            return GestureDetector(
-                                              onTap: () {
-                                                Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (context) => listaInfo(pedidos[i], widget.shopper),
-                                                    ));
-                                              },
-                                              child: Container(
-                                                width: 200,
-                                                height: 230,
-                                                child: Card(
-                                                    child: Column(
-                                                      children: <Widget> [
-                                                        ListTile(
-                                                          leading: Icon(Icons.list),
-                                                          title: Text("Quantidade de Itens: ${pedidos[i].itens.length}"),
-                                                        ),
-                                                        ListTile(
-                                                          leading: Icon(Icons.shopping_cart),
-                                                          title: Text("Super Mercado: ${pedidos[i].nomeMarket}"),
-                                                        ),
-                                                        ListTile(
-                                                          leading: Icon(Icons.calendar_today),
-                                                          title: Text("Data: ${formatDate(DateTime.fromMicrosecondsSinceEpoch(pedidos[i].dataHoraPed.microsecondsSinceEpoch), [dd, '/', mm, '/', yyyy])}"),
-                                                        ),
-                                                        Text("Ver mais...", style: TextStyle(
-                                                            color: Colors.lightBlueAccent
-                                                        ),),
-                                                        SizedBox(
-                                                          height: 15,
-                                                        )
-                                                      ],
-                                                    )
-                                                ),
+
+                                possuiLista
+                                    ? Expanded(
+                                    child: loadingListas
+                                        ? LinearProgressIndicator()
+                                        : ListView.builder(
+                                        itemCount: pedidos.length,
+                                        itemBuilder: (context, i) {
+                                          return GestureDetector(
+                                            onTap: () {
+                                              Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) => listaInfo(pedidos[i], widget.shopper),
+                                                  ));
+                                            },
+                                            child: Container(
+                                              width: 200,
+                                              height: 230,
+                                              child: Card(
+                                                  child: Column(
+                                                    children: <Widget> [
+                                                      ListTile(
+                                                        leading: Icon(Icons.list),
+                                                        title: Text("Quantidade de Itens: ${pedidos[i].itens.length}"),
+                                                      ),
+                                                      ListTile(
+                                                        leading: Icon(Icons.shopping_cart),
+                                                        title: Text("Super Mercado: ${pedidos[i].mercado.nome}"),
+                                                      ),
+                                                      ListTile(
+                                                        leading: Icon(Icons.calendar_today),
+                                                        title: Text("Data: ${formatDate(DateTime.fromMicrosecondsSinceEpoch(pedidos[i].dataHoraPed.microsecondsSinceEpoch), [dd, '/', mm, '/', yyyy])}"),
+                                                      ),
+                                                      Text("Ver mais...", style: TextStyle(
+                                                          color: Colors.lightBlueAccent
+                                                      ),),
+                                                      SizedBox(
+                                                        height: 15,
+                                                      )
+                                                    ],
+                                                  )
                                               ),
-                                            );
-                                          }))
-                              : Container(
+                                            ),
+                                          );
+                                        }))
+                                    : Container(
                                   width: 200,
                                   height: 200,
                                   alignment: Alignment.center,
                                   child: Center(
                                     child:
-                                        Text("Ainda não possui Listas..."),
+                                    Text("Ainda não possui Listas..."),
                                   ),
                                 ),
+
                         ],
                       ),
                     ),

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:compra_rapida_entregador/Screens/comprasMerc.dart';
+import 'package:compra_rapida_entregador/Screens/confirm.dart';
 import 'package:compra_rapida_entregador/model/status.dart';
 import 'package:compra_rapida_entregador/util/util.dart';
 import 'package:flutter/material.dart';
@@ -10,17 +11,17 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 
-class Corrida extends StatefulWidget {
+class Entrega extends StatefulWidget {
   String idPedido;
   String idShopper;
 
-  Corrida(this.idPedido, this.idShopper);
+  Entrega(this.idPedido, this.idShopper);
 
   @override
-  _CorridaState createState() => _CorridaState();
+  _EntregaState createState() => _EntregaState();
 }
 
-class _CorridaState extends State<Corrida> {
+class _EntregaState extends State<Entrega> {
   Completer<GoogleMapController> _controller = Completer();
   CameraPosition _posicaoCamera =
       CameraPosition(target: LatLng(-23.563999, -46.653256));
@@ -30,7 +31,7 @@ class _CorridaState extends State<Corrida> {
   String _statusRequisicao = Status.AGUARDANDO;
 
   //Controles para exibição na tela
-  String _textoBotao = "Aceitar entrega";
+  String _textoBotao = "Aceitar corrida";
   Color _corBotao = Color(0xff1ebbd8);
   Function _funcaoBotao;
   String _mensagemStatus = "";
@@ -58,8 +59,8 @@ class _CorridaState extends State<Corrida> {
   }
 
   _pertoMercado() async {
-    double latitudeMercado = _dadosRequisicao["mercado"]["latitude"];
-    double longitudeMercado = _dadosRequisicao["mercado"]["longitude"];
+    double latitudeMercado = _dadosRequisicao["destino"]["latitude"];
+    double longitudeMercado = _dadosRequisicao["destino"]["longitude"];
 
     double latitudeOrigem =
         _dadosRequisicao["entregadorClId"]["latitude"] != null
@@ -173,11 +174,8 @@ class _CorridaState extends State<Corrida> {
         _statusRequisicao = dados["situacao"];
 
         switch (_statusRequisicao) {
-          case Status.AGUARDANDO: //A_CAMINHO
+          case Status.COMPRAS: //A_CAMINHO
             _statusAguardando();
-            break;
-          case Status.A_CAMINHO:
-            _statusACaminho();
             break;
           case Status.ENTREGA:
             _statusEmViagem();
@@ -194,13 +192,19 @@ class _CorridaState extends State<Corrida> {
   }
 
   _statusAguardando() {
-    _alterarBotaoPrincipal("Iniciar", Color(0xff1ebbd8), () {
+    _alterarBotaoPrincipal("Continuar Entrega", Color(0xff1ebbd8), () {
       _aceitarCorrida();
     });
 
-    if (_localMotorista != null) {
-      double motoristaLat = _localMotorista.latitude;
-      double motoristaLon = _localMotorista.longitude;
+
+    double motoristaLat =
+    _dadosRequisicao["entregadorClId"]["latitude"] != null
+        ? _dadosRequisicao["entregadorClId"]["latitude"]
+        : _localMotorista.latitude;
+    double motoristaLon =
+    _dadosRequisicao["entregadorClId"]["longitude"] != null
+        ? _dadosRequisicao["entregadorClId"]["longitude"]
+        : _localMotorista.longitude;
 
       Position position =
           Position(latitude: motoristaLat, longitude: motoristaLon);
@@ -210,7 +214,6 @@ class _CorridaState extends State<Corrida> {
           target: LatLng(position.latitude, position.longitude), zoom: 19);
 
       _movimentarCamera(cameraPosition);
-    }
   }
 
   _statusACaminho() {
@@ -295,9 +298,9 @@ class _CorridaState extends State<Corrida> {
     var f = new NumberFormat("#,##0.00", "pt_BR");
     var valorViagemFormatado = f.format(valorViagem);
 
-    _mensagemStatus = "Entrega finalizada";
+    _mensagemStatus = "Viagem finalizada";
     _alterarBotaoPrincipal(
-        "Confirmar - R\$ ${valorViagemFormatado}", Color(0xff1ebbd8), () {
+        "Confirmar", Color(0xff1ebbd8), () {
       _confirmarCorrida();
     });
 
@@ -313,7 +316,14 @@ class _CorridaState extends State<Corrida> {
   }
 
   _statusConfirmada() {
-    Navigator.pushReplacementNamed(context, "/painel-motorista");
+
+
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => Confirmacao(widget.idPedido),
+        ));
+
   }
 
   _confirmarCorrida() {
@@ -326,8 +336,8 @@ class _CorridaState extends State<Corrida> {
 
   _statusEmViagem() {
     _mensagemStatus = "Em viagem";
-    _alterarBotaoPrincipal("Finalizar corrida", Color(0xff1ebbd8), () {
-      _finalizarCorrida();
+    _alterarBotaoPrincipal("Finalizar entrega", _habilitaBotaoMercado ? Color(0xff1ebbd8) : Color(0xff1ffff), () {
+      _habilitaBotaoMercado ? _finalizarCorrida() : null;
     });
 
     double latitudeDestino = _dadosRequisicao["destino"]["latitude"];
@@ -473,7 +483,7 @@ class _CorridaState extends State<Corrida> {
 
     //Salvar requisicao ativa para motorista
     db.collection("pedidos").document(widget.idPedido).updateData({
-      "situacao": Status.A_CAMINHO,
+      "situacao": Status.ENTREGA,
     });
   }
 
@@ -491,6 +501,7 @@ class _CorridaState extends State<Corrida> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text("Mapa Entrega- " + _mensagemStatus),
       ),
       body: Container(
