@@ -310,6 +310,7 @@ class _PerfilState extends State<Perfil> {
                 initialRating: widget.user.rate,
                 direction: Axis.horizontal,
                 allowHalfRating: false,
+                ignoreGestures: true,
                 itemCount: 5,
                 itemPadding: EdgeInsets.symmetric(horizontal: 4.0),
                 itemBuilder: (context, _) => Icon(

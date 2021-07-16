@@ -105,13 +105,6 @@ class _TextComposerState extends State<TextComposer> {
                     isComposing = text.isNotEmpty;
                   });
                 },
-                onSubmitted: (text) {
-                  widget.sendMessage(text: text);
-                  controller.clear();
-                  setState(() {
-                    isComposing = false;
-                  });
-                },
               )),
           IconButton(
             icon: Icon(Icons.send),
