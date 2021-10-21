@@ -94,7 +94,7 @@ class Util {
       Shopper shop = await Util.pesquisaShopper(documentList[0]["entregadorClId"]["id"]);
       ped.entregadorClId = shop;
       ped.itens = documentList[0]["itens"];
-      Market merc = await Util.getMercados(documentList[0]["nome"]);
+      Market merc = await Util.getMercados(documentList[0]["mercado"]["nome"]);
       ped.mercado = merc;
       ped.dataEntregaPed = documentList[0]["dataEntregaPed"];
       ped.dataHoraPed = documentList[0]["dataHoraPed"];

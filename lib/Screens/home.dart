@@ -91,7 +91,7 @@ class _HomeState extends State<Home> {
         //Shopper shop = await Util.pesquisaShopper(documentList[i]["entregadorClId"]["id"]);
         //ped.entregadorClId = shop;
         ped.itens = documentList[i]["itens"];
-        Market merc = await Util.getMercados(documentList[i]["nome"]);
+        Market merc = await Util.getMercados(documentList[i]["mercado"]["nome"]);
         ped.mercado = merc;
         ped.dataEntregaPed = documentList[i]["dataEntregaPed"];
         ped.dataHoraPed = documentList[i]["dataHoraPed"];
